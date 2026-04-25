@@ -1,399 +1,123 @@
 <!DOCTYPE html>
-<html lang="fr" dir="ltr">
+<html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <!-- ═══ CONTENT SECURITY POLICY ══════════════════════════════════════════════
-       Blocks ALL inline scripts from external origins.
-       Every script/style must come from the explicitly listed sources.
-       'unsafe-inline' is intentionally omitted for script-src.
-  ══════════════════════════════════════════════════════════════════════════════ -->
-<meta http-equiv="Content-Security-Policy" content="
-  default-src 'self';
-  script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
-  style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
-  font-src 'self' https://fonts.gstatic.com;
-  img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org;
-  connect-src 'self'
-    https://*.supabase.co
-    https://*.supabase.in
-    wss://*.supabase.co
-    wss://*.supabase.in
-    https://*.basemaps.cartocdn.com
-    https://cdn.jsdelivr.net;
-  worker-src 'self';
-  frame-src 'none';
-  object-src 'none';
-">
+  <!-- CSP (fixed) -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
+    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com;
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.basemaps.cartocdn.com;
+  ">
 
-  <meta name="referrer" content="strict-origin-when-cross-origin"/>
-  <meta name="theme-color" content="#090C12"/>
-  <meta name="description" content="Signalez les mauvaises routes en Algérie — بلّغ عن الطرق التالفة في الجزائر"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="حفرة"/>
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="حفرة — Hafra.DZ"/>
-  <meta property="og:description" content="Carte citoyenne des routes algériennes"/>
-  <meta property="og:url" content="https://hafra.dz"/>
-  <meta property="og:type" content="website"/>
-
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="apple-touch-icon" href="logo.png"/>
-  <link rel="icon" type="image/png" href="logo.png"/>
   <title>حفرة — Hafra.DZ</title>
 
+  <!-- Leaflet CSS -->
   <link rel="stylesheet"
- href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+    href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"/>
 
   <style>
-    :root{
-      --bg:#090C12;--s1:#10151F;--s2:#171D2B;--s3:#1F2638;
-      --bdr:rgba(255,255,255,.07);--bdr2:rgba(255,255,255,.13);
-      --acc:#FF5722;--acc2:#FF7043;--gold:#FFB800;
-      --txt:#DDE3EE;--dim:#5E6A84;--dim2:#8892A8;
-      --r:14px;--panel:340px;
+    body { margin:0; font-family:'Cairo',sans-serif; background:#090C12; color:#fff; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+
+    #header {
+      position:absolute;
+      top:0;
+      left:0;
+      right:0;
+      z-index:1000;
+      display:flex;
+      justify-content:space-between;
+      padding:10px;
+      background:#111;
     }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    html,body{height:100%;overflow:hidden;}
-    body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--txt);}
 
-    /* ── MAP ─────────────────────────────────────────────────────────── */
-    #map{position:absolute;inset:0;z-index:1;}
-    .leaflet-control-zoom{border:1px solid var(--bdr2)!important;background:var(--s1)!important;border-radius:10px!important;overflow:hidden;}
-    .leaflet-control-zoom a{background:var(--s1)!important;color:var(--txt)!important;border-color:var(--bdr)!important;}
-    .leaflet-control-zoom a:hover{background:var(--s2)!important;}
-    .leaflet-control-attribution{background:rgba(9,12,18,.85)!important;color:var(--dim)!important;font-size:9px!important;backdrop-filter:blur(6px);}
-    .leaflet-control-attribution a{color:var(--acc2)!important;}
-    .leaflet-popup-content-wrapper{background:var(--s1)!important;border:1px solid var(--bdr2)!important;border-radius:var(--r)!important;color:var(--txt)!important;box-shadow:0 12px 40px rgba(0,0,0,.6)!important;padding:0!important;}
-    .leaflet-popup-content{margin:0!important;font-family:'Cairo',sans-serif!important;}
-    .leaflet-popup-tip{background:var(--s1)!important;}
-    .leaflet-popup-close-button{color:var(--dim)!important;right:10px!important;top:10px!important;font-size:20px!important;z-index:10;}
+    .menu-btn {
+      background:#222;
+      color:white;
+      border:none;
+      padding:10px;
+      cursor:pointer;
+    }
 
-    /* ── HEADER ──────────────────────────────────────────────────────── */
-    #header{position:absolute;top:0;left:0;right:0;z-index:900;display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(180deg,rgba(9,12,18,.98) 68%,transparent);}
-    .menu-btn{width:38px;height:38px;flex-shrink:0;background:var(--s2);border:1px solid var(--bdr2);color:var(--txt);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:background .2s;}
-    .menu-btn:hover{background:var(--s3);}
-    .app-logo{height:34px;width:auto;object-fit:contain;flex-shrink:0;}
-    .logo-fallback{display:none;flex-direction:column;line-height:1.1;}
-    .logo-ar{font-size:24px;font-weight:800;color:var(--acc);}
-    .logo-sub{font-size:9px;color:var(--dim);font-family:'JetBrains Mono',monospace;letter-spacing:2px;text-transform:uppercase;}
-    .hdr-stats{display:flex;gap:6px;margin-left:auto;}
-    .hchip{background:var(--s2);border:1px solid var(--bdr);border-radius:8px;padding:3px 9px;display:flex;flex-direction:column;align-items:center;min-width:50px;}
-    .hchip-v{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500;color:var(--acc);}
-    .hchip-l{font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;}
-    @media(max-width:500px){.hchip:nth-child(n+3){display:none;}}
+    #panel {
+      position:absolute;
+      top:0;
+      left:0;
+      width:250px;
+      height:100%;
+      background:#111;
+      transform:translateX(-100%);
+      transition:0.3s;
+      z-index:1000;
+    }
 
-    /* ── PANEL ───────────────────────────────────────────────────────── */
-    #panel{position:absolute;top:0;left:0;width:var(--panel);height:100%;z-index:800;background:var(--s1);border-right:1px solid var(--bdr);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);}
-    #panel.open{transform:translateX(0);}
-    @media(max-width:600px){:root{--panel:100%;}}
-    .panel-top{padding:64px 18px 14px;border-bottom:1px solid var(--bdr);}
-    .panel-title{font-size:26px;font-weight:800;color:var(--acc);}
-    .panel-sub{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;letter-spacing:1.5px;margin-top:1px;}
-    .ptabs{display:flex;border-bottom:1px solid var(--bdr);}
-    .ptab{flex:1;padding:11px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--dim);cursor:pointer;transition:all .2s;letter-spacing:1px;text-transform:uppercase;border-bottom:2px solid transparent;}
-    .ptab.on{color:var(--acc);border-bottom-color:var(--acc);}
-    .pbody{flex:1;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:var(--s3) transparent;}
+    #panel.open {
+      transform:translateX(0);
+    }
 
-    /* ── CARDS ───────────────────────────────────────────────────────── */
-    .rcard{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:10px;cursor:pointer;transition:all .2s;overflow:hidden;}
-    .rcard:hover{border-color:var(--bdr2);transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,.3);}
-    .rcard-photo{width:100%;height:150px;object-fit:cover;display:block;}
-    .rcard-nophoto{width:100%;height:80px;display:flex;align-items:center;justify-content:center;font-size:32px;opacity:.2;}
-    .rcard-body{padding:11px 13px 13px;}
-    .rcard-top{display:flex;align-items:center;gap:6px;margin-bottom:7px;flex-wrap:wrap;}
-    .cat-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid;}
-    .votes-badge{margin-left:auto;display:flex;align-items:center;gap:3px;font-size:11px;color:var(--dim2);font-family:'JetBrains Mono',monospace;}
-    .rcard-comment{font-size:12.5px;color:var(--dim2);line-height:1.55;margin-bottom:8px;}
-    .rcard-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;}
-    .rcard-meta{font-size:10.5px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
-    .confirm-btn{display:flex;align-items:center;gap:4px;padding:5px 11px;background:transparent;border:1px solid var(--bdr2);color:var(--dim2);border-radius:20px;font-size:11px;font-family:'Cairo',sans-serif;cursor:pointer;transition:all .2s;font-weight:600;}
-    .confirm-btn:hover{border-color:var(--acc2);color:var(--acc2);}
-    .confirm-btn.done{background:rgba(255,87,34,.12);border-color:var(--acc);color:var(--acc);}
+    #fab {
+      position:absolute;
+      bottom:20px;
+      right:20px;
+      background:#ff5722;
+      color:white;
+      border:none;
+      width:60px;
+      height:60px;
+      border-radius:50%;
+      font-size:24px;
+      cursor:pointer;
+    }
 
-    /* ── STATS ───────────────────────────────────────────────────────── */
-    .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
-    .scard{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;text-align:center;}
-    .sval{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:500;color:var(--acc);line-height:1;}
-    .slbl{font-size:10px;color:var(--dim);margin-top:5px;text-transform:uppercase;letter-spacing:1px;}
-    .sec-head{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--dim);font-weight:700;margin:14px 0 10px;}
-    .catrow{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-    .catrow-label{width:130px;color:var(--dim2);font-size:11px;}
-    .bar-bg{flex:1;height:5px;background:var(--s3);border-radius:3px;overflow:hidden;}
-    .bar-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);}
-    .bar-n{width:22px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);}
-
-    /* ── LAYERS / TOGGLE ─────────────────────────────────────────────── */
-    .tog-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--bdr);}
-    .tog-info .tl{font-size:13px;font-weight:600;}
-    .tog-info .td{font-size:11px;color:var(--dim);margin-top:2px;}
-    .tog{position:relative;width:44px;height:25px;flex-shrink:0;}
-    .tog input{opacity:0;width:0;height:0;}
-    .tog-s{position:absolute;inset:0;background:var(--s3);border-radius:25px;cursor:pointer;transition:.3s;border:1px solid var(--bdr2);}
-    .tog-s::before{content:'';position:absolute;height:17px;width:17px;left:3px;top:3px;background:var(--dim);border-radius:50%;transition:.3s;}
-    .tog input:checked+.tog-s{background:var(--acc);border-color:var(--acc);}
-    .tog input:checked+.tog-s::before{transform:translateX(19px);background:#fff;}
-    .legend-grad{height:7px;border-radius:4px;background:linear-gradient(90deg,#EF4444,#F97316,#FBBF24,#84CC16,#22C55E);margin:10px 0 5px;}
-    .legend-labs{display:flex;justify-content:space-between;font-size:9.5px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
-    .oss-box{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-top:20px;}
-    .oss-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--acc);font-weight:700;margin-bottom:8px;}
-    .oss-txt{font-size:12px;color:var(--dim2);line-height:1.65;}
-    .export-btn{width:100%;margin-top:12px;padding:10px;background:transparent;border:1px solid var(--bdr2);color:var(--dim2);border-radius:8px;cursor:pointer;font-size:12px;font-family:'Cairo',sans-serif;font-weight:600;transition:all .2s;}
-    .export-btn:hover{border-color:var(--acc);color:var(--acc);}
-
-    /* ── FAB CLUSTER ─────────────────────────────────────────────────── */
-    .fab-cluster{position:absolute;bottom:26px;right:18px;z-index:900;display:flex;flex-direction:column;align-items:center;gap:10px;}
-    #btn-locate{width:46px;height:46px;border-radius:50%;border:1px solid var(--bdr2);background:var(--s2);color:var(--txt);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.4);transition:all .22s;}
-    #btn-locate:hover{background:var(--s3);border-color:var(--acc);color:var(--acc);transform:scale(1.08);}
-    #btn-locate.locating{color:var(--acc);border-color:var(--acc);animation:pulse-ring 1.2s infinite;}
-    #fab{width:62px;height:62px;border-radius:50%;border:none;background:var(--acc);color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 24px rgba(255,87,34,.4);transition:all .22s;line-height:1;}
-    #fab:hover{transform:scale(1.08);background:var(--acc2);}
-    #fab.active{background:#475569;transform:rotate(45deg);}
-    #fab-hint{position:absolute;bottom:30px;right:76px;z-index:920;background:var(--s2);border:1px solid var(--acc);color:var(--txt);padding:8px 14px;border-radius:8px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;}
-    #fab-hint.show{opacity:1;}
-    @keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(255,87,34,.5)}50%{box-shadow:0 0 0 8px rgba(255,87,34,0)}}
-
-    /* ── MODAL ───────────────────────────────────────────────────────── */
-    #overlay{position:absolute;inset:0;z-index:1000;background:rgba(0,0,0,.75);backdrop-filter:blur(5px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
-    #overlay.open{opacity:1;pointer-events:all;}
-    #overlay-bg{position:absolute;inset:0;}
-    #modal{position:relative;z-index:1;background:var(--s1);border:1px solid var(--bdr2);border-radius:22px 22px 0 0;width:100%;max-width:540px;padding:6px 22px 32px;max-height:92dvh;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);scrollbar-width:thin;scrollbar-color:var(--s3) transparent;}
-    #overlay.open #modal{transform:translateY(0);}
-    .modal-pull{width:36px;height:4px;background:var(--bdr2);border-radius:2px;margin:12px auto 18px;}
-    .modal-title{font-size:22px;font-weight:800;color:var(--acc);margin-bottom:16px;}
-    .fhead{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--dim);font-weight:700;margin-bottom:9px;}
-    .req{color:var(--acc);}
-
-    /* ── LOCATION BOX ────────────────────────────────────────────────── */
-    .loc-box{background:var(--s2);border:1px solid var(--bdr);border-radius:10px;padding:11px 13px;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
-    .loc-dot{width:9px;height:9px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:background .3s;}
-    .loc-dot.on{background:var(--acc);animation:blink 1.5s infinite;}
-    @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
-    .loc-info{flex:1;min-width:0;}
-    .loc-wilaya{font-size:13px;font-weight:700;}
-    .loc-coords{font-size:10.5px;font-family:'JetBrains Mono',monospace;color:var(--dim2);margin-top:1px;}
-    .loc-gps-btn{padding:6px 12px;background:transparent;border:1px solid var(--bdr2);color:var(--dim2);border-radius:8px;font-size:11px;font-family:'Cairo',sans-serif;cursor:pointer;transition:all .2s;white-space:nowrap;font-weight:600;}
-    .loc-gps-btn:hover{border-color:var(--acc);color:var(--acc);}
-
-    /* ── CATEGORY GRID ───────────────────────────────────────────────── */
-    .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:20px;}
-    .cat-btn{padding:10px 6px;border-radius:10px;border:1px solid var(--bdr);background:var(--s2);cursor:pointer;transition:all .18s;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;}
-    .cat-btn:hover{border-color:var(--bdr2);background:var(--s3);}
-    .cat-btn.sel{border-width:2px;}
-    .cat-ico{font-size:22px;line-height:1;pointer-events:none;}
-    .cat-fr{font-size:10px;font-weight:600;color:var(--txt);pointer-events:none;}
-    .cat-ar{font-size:10px;color:var(--dim2);pointer-events:none;}
-
-    /* ── STARS ───────────────────────────────────────────────────────── */
-    .star-row{display:flex;gap:8px;margin-bottom:6px;}
-    .star-btn{font-size:32px;cursor:pointer;transition:transform .15s, filter .15s;line-height:1;filter:grayscale(1) opacity(.3);user-select:none;}
-    .star-btn:hover{filter:grayscale(0) opacity(.7);transform:scale(1.15);}
-    .star-btn.on{filter:none;transform:scale(1.1);}
-    .star-label{font-size:12.5px;color:var(--dim2);margin-bottom:20px;min-height:20px;font-weight:500;}
-    .star-label.filled{color:var(--txt);font-weight:700;}
-
-    /* ── PHOTO UPLOAD ────────────────────────────────────────────────── */
-    .photo-zone{border:2px dashed var(--bdr2);border-radius:12px;margin-bottom:16px;cursor:pointer;transition:all .2s;overflow:hidden;position:relative;min-height:120px;display:flex;align-items:center;justify-content:center;}
-    .photo-zone:hover{border-color:var(--acc);}
-    .photo-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2;}
-    .photo-inner{display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px;pointer-events:none;}
-    .photo-ico{font-size:30px;}
-    .photo-txt{font-size:12px;color:var(--dim2);text-align:center;line-height:1.5;}
-    .photo-txt b{color:var(--acc);}
-    #photo-prev{width:100%;max-height:220px;object-fit:cover;display:none;border-radius:10px;}
-    .photo-rm{position:absolute;top:8px;right:8px;z-index:3;background:rgba(0,0,0,.65);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:13px;display:none;align-items:center;justify-content:center;}
-    .upload-progress{position:absolute;bottom:0;left:0;height:3px;background:var(--acc);border-radius:0 0 10px 10px;width:0%;transition:width .3s;}
-
-    /* ── COMMENT ─────────────────────────────────────────────────────── */
-    textarea{width:100%;background:var(--s2);border:1px solid var(--bdr);color:var(--txt);border-radius:10px;padding:11px 13px;font-family:'Cairo',sans-serif;font-size:13.5px;resize:none;outline:none;margin-bottom:6px;transition:border-color .2s;}
-    textarea:focus{border-color:var(--acc);}
-    textarea::placeholder{color:var(--dim);}
-    .char-count{font-size:10px;color:var(--dim);text-align:right;margin-bottom:18px;font-family:'JetBrains Mono',monospace;}
-    .char-count.warn{color:#FBBF24;}
-    .char-count.over{color:#EF4444;}
-
-    /* ── SUBMIT ──────────────────────────────────────────────────────── */
-    .submit-btn{width:100%;padding:15px;border:none;border-radius:12px;background:var(--acc);color:#fff;font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;}
-    .submit-btn:hover:not(:disabled){background:var(--acc2);}
-    .submit-btn:disabled{opacity:.35;cursor:not-allowed;}
-    .spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;flex-shrink:0;}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* ── POPUP ───────────────────────────────────────────────────────── */
-    .pu-photo{width:100%;height:170px;object-fit:cover;border-radius:14px 14px 0 0;display:block;}
-    .pu-body{padding:14px 16px 16px;}
-    .pu-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
-    .pu-cat{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid;}
-    .pu-comment{font-size:12.5px;color:var(--dim2);line-height:1.55;margin-bottom:10px;word-break:break-word;}
-    .pu-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
-    .pu-meta{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
-    .pu-confirm{display:flex;align-items:center;gap:5px;padding:6px 13px;background:transparent;border:1px solid var(--bdr2);color:var(--dim2);border-radius:20px;font-size:11px;font-family:'Cairo',sans-serif;cursor:pointer;transition:all .2s;font-weight:700;}
-    .pu-confirm:hover{border-color:var(--acc2);color:var(--acc2);}
-    .pu-confirm.done{background:rgba(255,87,34,.15);border-color:var(--acc);color:var(--acc);}
-    .pu-status{display:flex;align-items:center;gap:4px;font-size:10px;padding:4px 9px;border-radius:20px;border:1px solid var(--bdr);color:var(--dim2);cursor:pointer;transition:all .2s;}
-
-    /* ── LOADING ─────────────────────────────────────────────────────── */
-    #app-loading{position:absolute;inset:0;z-index:2000;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s;}
-    #app-loading.hidden{opacity:0;pointer-events:none;}
-    .al-logo{font-size:52px;font-weight:800;color:var(--acc);}
-    .al-sub{font-size:12px;color:var(--dim);font-family:'JetBrains Mono',monospace;letter-spacing:2px;}
-    .al-spin{width:28px;height:28px;border:2px solid var(--s3);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;}
-
-    /* ── CONN PILL ────────────────────────────────────────────────────── */
-    #conn-pill{position:absolute;top:62px;left:50%;transform:translateX(-50%);z-index:950;background:var(--s2);border:1px solid var(--bdr2);border-radius:20px;padding:5px 14px;font-size:11px;display:flex;align-items:center;gap:6px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
-    #conn-pill.show{opacity:1;}
-    .conn-dot{width:7px;height:7px;border-radius:50%;}
-
-    /* ── TOAST ───────────────────────────────────────────────────────── */
-    #toast{position:absolute;bottom:110px;left:50%;z-index:1200;transform:translateX(-50%) translateY(16px);background:var(--s2);border:1px solid var(--bdr2);color:var(--txt);padding:10px 18px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;max-width:90vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-
-    .empty{text-align:center;padding:40px 16px;color:var(--dim);}
-    .empty-ico{font-size:38px;margin-bottom:10px;opacity:.45;}
-    .empty-txt{font-size:12.5px;line-height:1.6;}
+    #btn-locate {
+      position:absolute;
+      bottom:90px;
+      right:20px;
+      background:#222;
+      color:white;
+      border:none;
+      width:50px;
+      height:50px;
+      border-radius:50%;
+      cursor:pointer;
+    }
   </style>
 </head>
+
 <body>
 
-<!-- LOADING SCREEN -->
-<div id="app-loading" aria-live="polite" aria-label="Chargement">
-  <div class="al-logo">حفرة</div>
-  <div class="al-sub">HAFRA.DZ</div>
-  <div class="al-spin"></div>
-</div>
-
 <!-- MAP -->
-<div id="map" role="application" aria-label="Carte des routes algériennes"></div>
+<div id="map"></div>
 
 <!-- HEADER -->
-<header id="header">
-  <button class="menu-btn" onclick="togglePanel()" aria-label="Ouvrir le menu">☰</button>
-  <!-- Drop your logo.png in the same folder — falls back to text automatically -->
-  <img src="logo.png" alt="Hafra.DZ" class="app-logo"
-       onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'"/>
-  <div class="logo-fallback" id="logo-fallback">
-    <span class="logo-ar">حفرة</span>
-    <span class="logo-sub">Hafra.DZ</span>
-  </div>
-  <div class="hdr-stats" aria-label="Statistiques">
-    <div class="hchip"><span class="hchip-v" id="h-total">—</span><span class="hchip-l">Signalements</span></div>
-    <div class="hchip"><span class="hchip-v" id="h-avg" style="color:var(--gold)">—</span><span class="hchip-l">Moy. ★</span></div>
-    <div class="hchip"><span class="hchip-v" id="h-bad" style="color:#EF4444">—</span><span class="hchip-l">Critiques</span></div>
-  </div>
-</header>
-
-<!-- CONNECTION PILL -->
-<div id="conn-pill" role="status">
-  <div class="conn-dot" id="conn-dot"></div>
-  <span id="conn-text">Connecté</span>
+<div id="header">
+  <button class="menu-btn" onclick="togglePanel()">☰</button>
+  <div>حفرة</div>
 </div>
 
 <!-- SIDE PANEL -->
-<nav id="panel" aria-label="Panneau latéral">
-  <div class="panel-top">
-    <div class="panel-title">Hafra.DZ</div>
-    <div class="panel-sub">signaler · confirmer · améliorer</div>
-  </div>
-  <div class="ptabs" role="tablist">
-    <div class="ptab on" role="tab" aria-selected="true"  onclick="setTab('feed',this)">Fil</div>
-    <div class="ptab"    role="tab" aria-selected="false" onclick="setTab('stats',this)">Stats</div>
-    <div class="ptab"    role="tab" aria-selected="false" onclick="setTab('layers',this)">Carte</div>
-  </div>
-  <div class="pbody" id="pbody" role="tabpanel"></div>
-</nav>
-
-<!-- FAB CLUSTER -->
-<div class="fab-cluster">
-  <button id="btn-locate" onclick="locateBtnClick()" aria-label="Ma position GPS">📍</button>
-  <button id="fab" onclick="toggleAdd()" aria-label="Ajouter un signalement">＋</button>
-</div>
-<div id="fab-hint" aria-live="polite">Appuyez sur la carte pour placer</div>
-
-<!-- REPORT MODAL -->
-<div id="overlay" role="dialog" aria-modal="true" aria-label="Nouveau signalement">
-  <div id="overlay-bg" onclick="closeModal()"></div>
-  <div id="modal">
-    <div class="modal-pull"></div>
-    <div class="modal-title">Nouveau signalement</div>
-
-    <!-- LOCATION -->
-    <div class="fhead">Localisation</div>
-    <div class="loc-box">
-      <div class="loc-dot" id="loc-dot"></div>
-      <div class="loc-info">
-        <div class="loc-wilaya" id="loc-wilaya">En attente…</div>
-        <div class="loc-coords" id="loc-coords">—</div>
-      </div>
-      <button class="loc-gps-btn" id="gps-btn" onclick="useMyLocation()">📍 Ma position</button>
-    </div>
-
-    <!-- CATEGORY -->
-    <div class="fhead">Catégorie <span class="req">*</span></div>
-    <div class="cat-grid" id="cat-grid" role="group" aria-label="Type de problème">
-      <button class="cat-btn" data-cat="pothole"  onclick="selCat('pothole',this)"  aria-pressed="false"><span class="cat-ico">🕳</span><span class="cat-fr">Nid-de-poule</span><span class="cat-ar">حفرة</span></button>
-      <button class="cat-btn" data-cat="cracks"   onclick="selCat('cracks',this)"   aria-pressed="false"><span class="cat-ico">🪨</span><span class="cat-fr">Fissures</span><span class="cat-ar">تشققات</span></button>
-      <button class="cat-btn" data-cat="lighting" onclick="selCat('lighting',this)" aria-pressed="false"><span class="cat-ico">🌑</span><span class="cat-fr">Éclairage</span><span class="cat-ar">إضاءة</span></button>
-      <button class="cat-btn" data-cat="signage"  onclick="selCat('signage',this)"  aria-pressed="false"><span class="cat-ico">🚧</span><span class="cat-fr">Signalisation</span><span class="cat-ar">لافتات</span></button>
-      <button class="cat-btn" data-cat="flooding" onclick="selCat('flooding',this)" aria-pressed="false"><span class="cat-ico">🌊</span><span class="cat-fr">Inondation</span><span class="cat-ar">فيضان</span></button>
-      <button class="cat-btn" data-cat="utility"  onclick="selCat('utility',this)"  aria-pressed="false"><span class="cat-ico">💧</span><span class="cat-fr">ADE / SEAAL</span><span class="cat-ar">أضرار المياه</span></button>
-    </div>
-
-    <!-- STARS -->
-    <div class="fhead">État de la route <span class="req">*</span></div>
-    <div class="star-row" id="star-row" role="group" aria-label="Note de 1 à 5">
-      <span class="star-btn" role="button" tabindex="0" aria-label="1 étoile" onclick="setStar(1)" onkeydown="if(event.key==='Enter')setStar(1)">⭐</span>
-      <span class="star-btn" role="button" tabindex="0" aria-label="2 étoiles" onclick="setStar(2)" onkeydown="if(event.key==='Enter')setStar(2)">⭐</span>
-      <span class="star-btn" role="button" tabindex="0" aria-label="3 étoiles" onclick="setStar(3)" onkeydown="if(event.key==='Enter')setStar(3)">⭐</span>
-      <span class="star-btn" role="button" tabindex="0" aria-label="4 étoiles" onclick="setStar(4)" onkeydown="if(event.key==='Enter')setStar(4)">⭐</span>
-      <span class="star-btn" role="button" tabindex="0" aria-label="5 étoiles" onclick="setStar(5)" onkeydown="if(event.key==='Enter')setStar(5)">⭐</span>
-    </div>
-    <div class="star-label" id="star-label">Sélectionnez une note</div>
-
-    <!-- PHOTO -->
-    <div class="fhead">Photo <span style="color:var(--dim);font-weight:400">(recommandée)</span></div>
-    <div class="photo-zone" id="photo-zone">
-      <input type="file" id="photo-input" accept="image/jpeg,image/jpg,image/png,image/webp" capture="environment" onchange="onPhoto(this)" aria-label="Choisir une photo"/>
-      <button class="photo-rm" id="photo-rm" onclick="removePhoto(event)" aria-label="Supprimer la photo">✕</button>
-      <img id="photo-prev" alt="Aperçu de la photo"/>
-      <div class="photo-inner" id="photo-inner">
-        <div class="photo-ico">📷</div>
-        <div class="photo-txt">Prendre une photo<br/><b>ou touchez pour choisir</b></div>
-      </div>
-      <div class="upload-progress" id="upload-progress"></div>
-    </div>
-
-    <!-- COMMENT -->
-    <div class="fhead">Commentaire <span style="color:var(--dim);font-weight:400">(optionnel)</span></div>
-    <textarea id="comment" rows="2" maxlength="300"
-      placeholder="Ex: Nid-de-poule sur 30m après le feu rouge…"
-      oninput="updateCharCount(this)"></textarea>
-    <div class="char-count" id="char-count">0 / 300</div>
-
-    <button class="submit-btn" id="submit-btn" onclick="submitReport()" disabled aria-disabled="true">
-      <div class="spin" id="submit-spin"></div>
-      <span id="submit-txt">Soumettre le signalement</span>
-    </button>
-  </div>
+<div id="panel">
+  <h3 style="padding:20px;">Menu</h3>
 </div>
 
-<!-- TOAST -->
-<div id="toast" role="alert" aria-live="assertive"></div>
+<!-- FLOATING BUTTONS -->
+<button id="btn-locate">📍</button>
+<button id="fab">＋</button>
 
-<!-- Leaflet -->
+<!-- LIBRARIES (IMPORTANT) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Heatmap plugin -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
-
-<!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
-<!-- Your app -->
+<!-- YOUR APP -->
 <script src="app.js"></script>
+
 </body>
 </html>
