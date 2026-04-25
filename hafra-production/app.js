@@ -9,8 +9,8 @@
 // ══════════════════════════════════════════════════════════════════════════════
 //  ⚙️  CONFIG — Edit these two lines after creating your Supabase project
 // ══════════════════════════════════════════════════════════════════════════════
-const SUPABASE_URL      = 'https://njijaewqenuranmqswpf.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_gBejxCuOECbmhbqr6bgcCw_PX1USBGj';
+const SUPABASE_URL      = https://njijaewqenuranmqswpf.supabase.co ;
+const SUPABASE_ANON_KEY = sb_publishable_gBejxCuOECbmhbqr6bgcCw_PX1USBGj ;
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── SECURITY: XSS-safe DOM helpers ───────────────────────────────────────────
