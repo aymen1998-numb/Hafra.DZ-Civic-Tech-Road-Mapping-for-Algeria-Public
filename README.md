@@ -1,0 +1,2 @@
+# Hafra.DZ-Civic-Tech-Road-Mapping-for-Algeria-Public
+Hafra.DZ is an open-source, real-time Progressive Web App (PWA) designed to crowdsource road quality data across Algeria. Built with a focus on high security and offline performance, it allows citizens to map potholes, lighting failures, and infrastructure hazards. Join us in building transparent civic tech for Algeria. Contributions are welcome!
