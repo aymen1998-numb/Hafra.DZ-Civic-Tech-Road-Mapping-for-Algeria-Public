@@ -10,32 +10,23 @@
        Every script/style must come from the explicitly listed sources.
        'unsafe-inline' is intentionally omitted for script-src.
   ══════════════════════════════════════════════════════════════════════════════ -->
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self';
-    script-src  'self'
-                https://cdnjs.cloudflare.com
-                https://cdn.jsdelivr.net;
-    style-src   'self' 'unsafe-inline'
-                https://cdnjs.cloudflare.com
-                https://fonts.googleapis.com;
-    font-src    'self'
-                https://fonts.gstatic.com;
-    img-src     'self' data: blob:
-                https://*.supabase.co
-                https://*.supabase.in
-                https://*.basemaps.cartocdn.com
-                https://*.tile.openstreetmap.org;
-    connect-src 'self'
-                https://*.supabase.co
-                https://*.supabase.in
-                wss://*.supabase.co
-                https://*.basemaps.cartocdn.com;
-    worker-src  'self';
-    frame-src   'none';
-    object-src  'none';
-    base-uri    'self';
-    form-action 'none';
-  "/>
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
+  style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org;
+  connect-src 'self'
+    https://*.supabase.co
+    https://*.supabase.in
+    wss://*.supabase.co
+    wss://*.supabase.in
+    https://*.basemaps.cartocdn.com
+    https://cdn.jsdelivr.net;
+  worker-src 'self';
+  frame-src 'none';
+  object-src 'none';
+">
 
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <meta name="theme-color" content="#090C12"/>
