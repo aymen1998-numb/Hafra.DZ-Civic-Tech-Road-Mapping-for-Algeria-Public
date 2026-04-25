@@ -10,7 +10,7 @@
 //  ⚙️  CONFIG — Edit these two lines after creating your Supabase project
 // ══════════════════════════════════════════════════════════════════════════════
 const SUPABASE_URL      = 'https://njijaewqenuranmqswpf.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_gBejxCuOECbmhbqr6bgcCw_PX1USBGj';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qaWphZXdxZW51cmFubXFzd3BmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMTczODksImV4cCI6MjA5MjY5MzM4OX0.mfuNoKGabrg1URPh3f3Ny6mW9ND_D_NOdKHdHybWrf0';
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── SECURITY: XSS-safe DOM helpers ───────────────────────────────────────────
