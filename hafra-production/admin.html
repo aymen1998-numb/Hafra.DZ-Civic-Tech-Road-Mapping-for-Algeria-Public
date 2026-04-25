@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src  'self' https://cdn.jsdelivr.net;
+    style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src    'self' https://fonts.gstatic.com;
+    img-src     'self' data: blob: https://*.supabase.co https://*.supabase.in;
+    connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co;
+    frame-src   'none'; object-src 'none'; base-uri 'self'; form-action 'self';
+  "/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <title>حفرة · Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── TOKENS ───────────────────────────────────────────────────────────── */
+    :root {
+      --bg:     #07090F;
+      --s1:     #0D1117;
+      --s2:     #161B22;
+      --s3:     #21262D;
+      --s4:     #30363D;
+      --bdr:    rgba(255,255,255,.06);
+      --bdr2:   rgba(255,255,255,.12);
+      --acc:    #FF5722;
+      --acc2:   #FF7043;
+      --blue:   #58A6FF;
+      --green:  #3FB950;
+      --yellow: #D29922;
+      --red:    #F85149;
+      --purple: #A371F7;
+      --txt:    #E6EDF3;
+      --dim:    #7D8590;
+      --dim2:   #8B949E;
+      --mono:   'IBM Plex Mono', monospace;
+      --sans:   'IBM Plex Sans', sans-serif;
+      --sidebar: 220px;
+      --r: 8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--txt); font-family: var(--sans); overflow: hidden; }
+    button { font-family: var(--sans); cursor: pointer; }
+    input, select, textarea { font-family: var(--sans); }
+
+    /* ── SCROLLBAR ────────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--s4); border-radius: 3px; }
+
+    /* ── LOGIN SCREEN ─────────────────────────────────────────────────────── */
+    #login-screen {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #login-screen.hidden { display: none; }
+    .login-box {
+      width: 360px;
+      background: var(--s1);
+      border: 1px solid var(--bdr2);
+      border-radius: 12px;
+      padding: 36px 32px;
+    }
+    .login-logo {
+      font-size: 32px; font-weight: 700; color: var(--acc);
+      margin-bottom: 4px; letter-spacing: -1px;
+    }
+    .login-sub {
+      font-size: 11px; color: var(--dim); font-family: var(--mono);
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 32px;
+    }
+    .lfield { margin-bottom: 16px; }
+    .lfield label { display: block; font-size: 11px; font-weight: 600; color: var(--dim2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .lfield input {
+      width: 100%; padding: 10px 13px;
+      background: var(--s2); border: 1px solid var(--bdr2);
+      color: var(--txt); border-radius: var(--r);
+      font-size: 14px; outline: none; transition: border-color .2s;
+    }
+    .lfield input:focus { border-color: var(--acc); }
+    .login-btn {
+      width: 100%; padding: 12px; margin-top: 8px;
+      background: var(--acc); color: #fff;
+      border: none; border-radius: var(--r);
+      font-size: 14px; font-weight: 600; transition: background .2s;
+    }
+    .login-btn:hover { background: var(--acc2); }
+    .login-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .login-err { font-size: 12px; color: var(--red); margin-top: 12px; min-height: 18px; }
+
+    /* ── APP SHELL ────────────────────────────────────────────────────────── */
+    #app { display: flex; height: 100vh; overflow: hidden; }
+    #app.hidden { display: none; }
+
+    /* ── SIDEBAR ──────────────────────────────────────────────────────────── */
+    #sidebar {
+      width: var(--sidebar); flex-shrink: 0;
+      background: var(--s1); border-right: 1px solid var(--bdr);
+      display: flex; flex-direction: column;
+      padding: 20px 0;
+    }
+    .sb-logo { padding: 0 18px 20px; border-bottom: 1px solid var(--bdr); margin-bottom: 12px; }
+    .sb-logo-name { font-size: 20px; font-weight: 700; color: var(--acc); }
+    .sb-logo-tag { font-size: 9px; font-family: var(--mono); color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 1px; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 18px; margin: 1px 8px;
+      border-radius: 6px; cursor: pointer;
+      font-size: 13px; font-weight: 500; color: var(--dim2);
+      transition: all .15s; position: relative;
+    }
+    .nav-item:hover { background: var(--s2); color: var(--txt); }
+    .nav-item.active { background: var(--s2); color: var(--txt); }
+    .nav-item.active::before { content:''; position:absolute; left:0; top:50%; transform:translateY(-50%); height:60%; width:3px; background:var(--acc); border-radius:0 3px 3px 0; }
+    .nav-ico { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 10px; font-family: var(--mono); }
+    .nav-badge.green { background: var(--green); }
+
+    .sb-section { font-size: 9px; font-family: var(--mono); letter-spacing: 2px; text-transform: uppercase; color: var(--dim); padding: 12px 18px 6px; margin-top: 6px; }
+
+    .sb-bottom { margin-top: auto; padding: 12px 8px 0; border-top: 1px solid var(--bdr); }
+    .sb-user { padding: 8px 10px; border-radius: 6px; display: flex; align-items: center; gap: 8px; }
+    .sb-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--acc); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .sb-user-name { font-size: 12px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sb-user-role { font-size: 9px; color: var(--dim); font-family: var(--mono); }
+    .logout-btn { padding: 4px 8px; background: transparent; border: 1px solid var(--bdr2); color: var(--dim2); border-radius: 5px; font-size: 11px; transition: all .15s; flex-shrink: 0; }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── MAIN CONTENT ─────────────────────────────────────────────────────── */
+    #main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+    /* ── TOP BAR ──────────────────────────────────────────────────────────── */
+    #topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(7,9,15,.92); backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--bdr);
+      padding: 12px 28px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .topbar-title { font-size: 16px; font-weight: 600; }
+    .topbar-sub { font-size: 11px; color: var(--dim); font-family: var(--mono); }
+    .topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .tb-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 13px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      border: 1px solid var(--bdr2); background: var(--s2); color: var(--dim2);
+      transition: all .15s;
+    }
+    .tb-btn:hover { border-color: var(--bdr2); color: var(--txt); background: var(--s3); }
+    .tb-btn.primary { background: var(--acc); border-color: var(--acc); color: #fff; }
+    .tb-btn.primary:hover { background: var(--acc2); }
+    .tb-btn.danger { border-color: transparent; color: var(--red); }
+    .tb-btn.danger:hover { background: rgba(248,81,73,.12); border-color: var(--red); }
+
+    /* ── PAGE CONTENT ─────────────────────────────────────────────────────── */
+    .page { padding: 24px 28px; display: none; flex-direction: column; gap: 20px; }
+    .page.active { display: flex; }
+
+    /* ── STAT CARDS ───────────────────────────────────────────────────────── */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .stat-card {
+      background: var(--s1); border: 1px solid var(--bdr);
+      border-radius: var(--r); padding: 16px 18px;
+      display: flex; flex-direction: column; gap: 6px;
+      transition: border-color .2s;
+    }
+    .stat-card:hover { border-color: var(--bdr2); }
+    .stat-label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+    .stat-value { font-size: 28px; font-weight: 600; font-family: var(--mono); line-height: 1; }
+    .stat-delta { font-size: 10px; color: var(--dim); font-family: var(--mono); }
+
+    /* ── TABLE SECTION ────────────────────────────────────────────────────── */
+    .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .section-title { font-size: 14px; font-weight: 600; }
+    .section-count { font-size: 11px; font-family: var(--mono); color: var(--dim); background: var(--s3); padding: 2px 8px; border-radius: 10px; }
+
+    /* ── FILTERS ──────────────────────────────────────────────────────────── */
+    .filters {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      background: var(--s1); border: 1px solid var(--bdr);
+      border-radius: var(--r); padding: 10px 14px;
+    }
+    .filter-label { font-size: 10px; font-family: var(--mono); color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-right: 4px; }
+    .filter-select, .filter-input {
+      background: var(--s2); border: 1px solid var(--bdr2);
+      color: var(--txt); border-radius: 6px;
+      padding: 5px 10px; font-size: 12px; outline: none;
+      transition: border-color .2s;
+    }
+    .filter-select:focus, .filter-input:focus { border-color: var(--acc); }
+    .filter-input { width: 180px; }
+    .filter-reset { margin-left: auto; font-size: 11px; color: var(--dim2); background: none; border: none; cursor: pointer; }
+    .filter-reset:hover { color: var(--acc); }
+
+    /* ── TABLE ────────────────────────────────────────────────────────────── */
+    .table-wrap { background: var(--s1); border: 1px solid var(--bdr); border-radius: var(--r); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    thead { background: var(--s2); }
+    th {
+      padding: 10px 14px; text-align: left;
+      font-size: 10px; font-family: var(--mono); text-transform: uppercase;
+      letter-spacing: 1px; color: var(--dim); font-weight: 500;
+      border-bottom: 1px solid var(--bdr); white-space: nowrap;
+      cursor: pointer; user-select: none;
+    }
+    th:hover { color: var(--txt); }
+    th .sort-arrow { margin-left: 4px; opacity: .4; }
+    th.sorted .sort-arrow { opacity: 1; color: var(--acc); }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--bdr); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    tr.selected td { background: rgba(255,87,34,.05); }
+    tr.archived-row td { opacity: .45; }
+    .cb { width: 16px; height: 16px; accent-color: var(--acc); cursor: pointer; }
+
+    /* ── TABLE CELLS ──────────────────────────────────────────────────────── */
+    .cell-id { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+    .cat-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid; }
+    .score-chip { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; font-size: 12px; font-weight: 700; font-family: var(--mono); }
+    .status-dot { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; }
+    .sdot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .flag-pill { display: inline-flex; align-items: center; gap: 4px; background: rgba(248,81,73,.15); border: 1px solid rgba(248,81,73,.3); color: var(--red); padding: 2px 7px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+    .archive-pill { display: inline-flex; align-items: center; gap: 4px; background: rgba(125,133,144,.12); border: 1px solid rgba(125,133,144,.2); color: var(--dim); padding: 2px 7px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+    .thumb { width: 52px; height: 38px; object-fit: cover; border-radius: 5px; border: 1px solid var(--bdr); cursor: pointer; transition: transform .15s; }
+    .thumb:hover { transform: scale(1.06); }
+    .no-photo { width: 52px; height: 38px; border-radius: 5px; border: 1px solid var(--bdr); background: var(--s3); display: flex; align-items: center; justify-content: center; font-size: 14px; opacity: .35; }
+    .row-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+    tr:hover .row-actions { opacity: 1; }
+    .row-btn { padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; border: 1px solid var(--bdr2); background: var(--s2); color: var(--dim2); transition: all .15s; }
+    .row-btn:hover { color: var(--txt); border-color: var(--bdr2); background: var(--s3); }
+    .row-btn.red:hover { color: var(--red); border-color: rgba(248,81,73,.3); background: rgba(248,81,73,.08); }
+    .row-btn.orange:hover { color: var(--yellow); border-color: rgba(210,153,34,.3); }
+
+    /* ── BULK BAR ─────────────────────────────────────────────────────────── */
+    #bulk-bar {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--s2); border: 1px solid var(--bdr2);
+      border-radius: 10px; padding: 10px 16px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      z-index: 200; opacity: 0; pointer-events: none; transition: all .2s;
+    }
+    #bulk-bar.show { opacity: 1; pointer-events: all; }
+    .bulk-count { font-size: 12px; font-weight: 600; font-family: var(--mono); color: var(--acc); }
+    .bulk-sep { width: 1px; height: 20px; background: var(--bdr2); }
+    .bulk-btn { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1px solid var(--bdr2); background: transparent; color: var(--dim2); transition: all .15s; }
+    .bulk-btn:hover { color: var(--txt); background: var(--s3); }
+    .bulk-btn.danger:hover { color: var(--red); border-color: rgba(248,81,73,.4); background: rgba(248,81,73,.08); }
+    .bulk-btn.warning:hover { color: var(--yellow); border-color: rgba(210,153,34,.3); }
+    .bulk-btn.safe:hover { color: var(--green); border-color: rgba(63,185,80,.3); }
+
+    /* ── PHOTO GALLERY ────────────────────────────────────────────────────── */
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .gallery-card {
+      background: var(--s1); border: 1px solid var(--bdr);
+      border-radius: var(--r); overflow: hidden; cursor: pointer;
+      transition: all .2s; position: relative;
+    }
+    .gallery-card:hover { border-color: var(--bdr2); transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,.4); }
+    .gallery-card.flagged-card { border-color: rgba(248,81,73,.4); }
+    .gallery-img { width: 100%; height: 150px; object-fit: cover; display: block; }
+    .gallery-info { padding: 10px 12px; }
+    .gallery-cat { font-size: 11px; font-weight: 600; margin-bottom: 3px; }
+    .gallery-meta { font-size: 10px; color: var(--dim); font-family: var(--mono); }
+    .gallery-flag { position: absolute; top: 8px; right: 8px; background: rgba(248,81,73,.85); color: #fff; border: none; border-radius: 5px; padding: 3px 7px; font-size: 10px; font-weight: 700; }
+
+    /* ── AUDIT LOG ────────────────────────────────────────────────────────── */
+    .audit-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--bdr); }
+    .audit-row:last-child { border-bottom: none; }
+    .audit-action { width: 80px; flex-shrink: 0; }
+    .audit-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; font-family: var(--mono); text-transform: uppercase; }
+    .audit-detail { flex: 1; min-width: 0; }
+    .audit-text { font-size: 12px; color: var(--txt); }
+    .audit-sub { font-size: 10px; color: var(--dim); font-family: var(--mono); margin-top: 2px; }
+    .audit-time { font-size: 10px; color: var(--dim); font-family: var(--mono); flex-shrink: 0; }
+
+    /* ── SLIDE-IN EDITOR ──────────────────────────────────────────────────── */
+    #editor-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    #editor-overlay.open { opacity: 1; pointer-events: all; }
+    #editor-panel {
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: 460px; background: var(--s1);
+      border-left: 1px solid var(--bdr2);
+      display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+      overflow: hidden;
+    }
+    #editor-overlay.open #editor-panel { transform: translateX(0); }
+    .ep-header { padding: 20px 24px; border-bottom: 1px solid var(--bdr); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .ep-title { font-size: 15px; font-weight: 600; }
+    .ep-id { font-size: 10px; color: var(--dim); font-family: var(--mono); margin-top: 2px; }
+    .ep-close { background: none; border: 1px solid var(--bdr2); color: var(--dim2); border-radius: 6px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; transition: all .15s; }
+    .ep-close:hover { color: var(--txt); border-color: var(--bdr2); background: var(--s3); }
+    .ep-photo { width: 100%; height: 200px; object-fit: cover; display: block; flex-shrink: 0; }
+    .ep-photo-none { width: 100%; height: 100px; background: var(--s2); display: flex; align-items: center; justify-content: center; font-size: 24px; opacity: .25; flex-shrink: 0; }
+    .ep-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .ep-field { margin-bottom: 18px; }
+    .ep-label { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-bottom: 7px; display: block; }
+    .ep-input { width: 100%; background: var(--s2); border: 1px solid var(--bdr2); color: var(--txt); border-radius: 6px; padding: 8px 11px; font-size: 13px; outline: none; transition: border-color .2s; }
+    .ep-input:focus { border-color: var(--acc); }
+    select.ep-input { appearance: none; cursor: pointer; }
+    textarea.ep-input { resize: vertical; min-height: 80px; font-family: var(--sans); }
+    .ep-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .ep-footer { padding: 16px 24px; border-top: 1px solid var(--bdr); display: flex; gap: 8px; flex-shrink: 0; background: var(--s1); }
+    .ep-save { flex: 1; padding: 10px; background: var(--acc); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; transition: background .2s; }
+    .ep-save:hover { background: var(--acc2); }
+    .ep-save:disabled { opacity: .4; cursor: not-allowed; }
+    .ep-flag { padding: 10px 14px; background: transparent; border: 1px solid var(--bdr2); color: var(--dim2); border-radius: 6px; font-size: 12px; font-weight: 600; transition: all .2s; }
+    .ep-flag:hover { border-color: rgba(248,81,73,.4); color: var(--red); }
+    .ep-flag.flagged { background: rgba(248,81,73,.12); border-color: rgba(248,81,73,.5); color: var(--red); }
+    .ep-delete { padding: 10px 14px; background: transparent; border: 1px solid rgba(248,81,73,.3); color: var(--red); border-radius: 6px; font-size: 12px; font-weight: 600; transition: all .2s; }
+    .ep-delete:hover { background: rgba(248,81,73,.12); }
+
+    /* ── IMAGE LIGHTBOX ───────────────────────────────────────────────────── */
+    #lightbox {
+      position: fixed; inset: 0; z-index: 9000;
+      background: rgba(0,0,0,.92); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    #lightbox.open { opacity: 1; pointer-events: all; }
+    #lightbox-img { max-width: 90vw; max-height: 85vh; border-radius: 8px; object-fit: contain; }
+    #lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; }
+
+    /* ── CONFIRM DIALOG ───────────────────────────────────────────────────── */
+    #confirm-overlay {
+      position: fixed; inset: 0; z-index: 9998;
+      background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    #confirm-overlay.open { opacity: 1; pointer-events: all; }
+    .confirm-box { background: var(--s1); border: 1px solid var(--bdr2); border-radius: 12px; padding: 28px; width: 360px; }
+    .confirm-icon { font-size: 28px; margin-bottom: 12px; }
+    .confirm-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .confirm-body { font-size: 13px; color: var(--dim2); line-height: 1.6; margin-bottom: 22px; }
+    .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .confirm-cancel { padding: 8px 16px; background: transparent; border: 1px solid var(--bdr2); color: var(--dim2); border-radius: 6px; font-size: 13px; cursor: pointer; }
+    .confirm-cancel:hover { color: var(--txt); }
+    .confirm-ok { padding: 8px 16px; background: var(--red); border: none; color: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .confirm-ok:hover { background: #e03030; }
+
+    /* ── TOAST ────────────────────────────────────────────────────────────── */
+    #toast-container { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast { background: var(--s2); border: 1px solid var(--bdr2); color: var(--txt); padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,.4); transform: translateX(20px); opacity: 0; transition: all .25s; max-width: 320px; }
+    .toast.show { transform: translateX(0); opacity: 1; }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.error   { border-left: 3px solid var(--red); }
+    .toast.info    { border-left: 3px solid var(--blue); }
+
+    /* ── EMPTY / LOADING ──────────────────────────────────────────────────── */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--dim); }
+    .empty-ico { font-size: 40px; margin-bottom: 12px; opacity: .4; }
+    .empty-txt { font-size: 13px; }
+    .skeleton { background: linear-gradient(90deg, var(--s2) 25%, var(--s3) 50%, var(--s2) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* ── PAGINATION ───────────────────────────────────────────────────────── */
+    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--bdr); font-size: 12px; color: var(--dim); }
+    .pg-btns { display: flex; gap: 4px; }
+    .pg-btn { padding: 4px 10px; border-radius: 5px; border: 1px solid var(--bdr2); background: transparent; color: var(--dim2); font-size: 11px; cursor: pointer; transition: all .15s; }
+    .pg-btn:hover { color: var(--txt); background: var(--s3); }
+    .pg-btn.active { background: var(--acc); border-color: var(--acc); color: #fff; }
+    .pg-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    /* ── RESPONSIVE ───────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      #sidebar { width: 54px; }
+      .nav-item span, .sb-logo-name, .sb-logo-tag, .sb-user-name, .sb-user-role, .sb-section, .logout-btn { display: none; }
+      .nav-item { padding: 10px; justify-content: center; }
+      #editor-panel { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ════════════════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">حفرة</div>
+    <div class="login-sub">Admin Dashboard</div>
+    <div class="lfield">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="admin@hafra.dz" autocomplete="email"/>
+    </div>
+    <div class="lfield">
+      <label>Mot de passe</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Se connecter</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ═══ APP ══════════════════════════════════════════════════════════════════ -->
+<div id="app" class="hidden">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-name">حفرة</div>
+      <div class="sb-logo-tag">Admin Panel</div>
+    </div>
+
+    <div class="sb-section">Général</div>
+    <div class="nav-item active" onclick="showPage('dashboard', this)">
+      <span class="nav-ico">📊</span><span>Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="showPage('reports', this)">
+      <span class="nav-ico">📋</span><span>Signalements</span>
+      <span class="nav-badge" id="badge-active">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('photos', this)">
+      <span class="nav-ico">📷</span><span>Photos</span>
+    </div>
+
+    <div class="sb-section">Modération</div>
+    <div class="nav-item" onclick="showPage('flagged', this)">
+      <span class="nav-ico">🚩</span><span>Signalés</span>
+      <span class="nav-badge" id="badge-flagged" style="display:none">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('archived', this)">
+      <span class="nav-ico">🗃️</span><span>Archives</span>
+    </div>
+    <div class="nav-item" onclick="showPage('audit', this)">
+      <span class="nav-ico">📜</span><span>Journal</span>
+    </div>
+
+    <div class="sb-bottom">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">A</div>
+        <div style="flex:1;min-width:0">
+          <div class="sb-user-name" id="sb-email">—</div>
+          <div class="sb-user-role" id="sb-role">moderator</div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()">↩</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main">
+    <div id="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-sub" id="topbar-sub">Vue d'ensemble</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="tb-btn" onclick="exportCSV()">↓ Export CSV</button>
+        <button class="tb-btn" onclick="refreshAll()">↻ Actualiser</button>
+      </div>
+    </div>
+
+    <!-- ── DASHBOARD PAGE ─────────────────────────────────────────────────── -->
+    <div class="page active" id="page-dashboard">
+      <div class="stat-grid" id="stat-grid">
+        <!-- Injected by JS -->
+      </div>
+
+      <!-- Quick recent reports -->
+      <div>
+        <div class="section-header">
+          <div class="section-title">Signalements récents</div>
+          <div class="section-count" id="recent-count">—</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Photo</th><th>Catégorie</th><th>Wilaya</th>
+                <th>Note</th><th>Statut</th><th>Date</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="recent-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REPORTS PAGE ───────────────────────────────────────────────────── -->
+    <div class="page" id="page-reports">
+      <div class="filters">
+        <span class="filter-label">Filtres</span>
+        <input class="filter-input" id="f-search" placeholder="Rechercher…" oninput="applyFilters()"/>
+        <select class="filter-select" id="f-wilaya" onchange="applyFilters()"><option value="">Toutes les wilayas</option></select>
+        <select class="filter-select" id="f-cat" onchange="applyFilters()">
+          <option value="">Toutes catégories</option>
+          <option value="pothole">🕳 Nid-de-poule</option>
+          <option value="cracks">🪨 Fissures</option>
+          <option value="lighting">🌑 Éclairage</option>
+          <option value="signage">🚧 Signalisation</option>
+          <option value="flooding">🌊 Inondation</option>
+          <option value="utility">💧 ADE / SEAAL</option>
+        </select>
+        <select class="filter-select" id="f-status" onchange="applyFilters()">
+          <option value="">Tous statuts</option>
+          <option value="active">Actif</option>
+          <option value="reported">Signalé</option>
+          <option value="fixed">Réparé</option>
+          <option value="flagged">Faux signalement</option>
+        </select>
+        <select class="filter-select" id="f-score" onchange="applyFilters()">
+          <option value="">Toutes notes</option>
+          <option value="1">⭐ 1</option>
+          <option value="2">⭐⭐ 2</option>
+          <option value="3">⭐⭐⭐ 3</option>
+          <option value="4">⭐⭐⭐⭐ 4</option>
+          <option value="5">⭐⭐⭐⭐⭐ 5</option>
+        </select>
+        <button class="filter-reset" onclick="resetFilters()">Réinitialiser ✕</button>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Tous les signalements</div>
+        <div class="section-count" id="reports-count">—</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" class="cb" id="select-all" onchange="toggleSelectAll(this)"/></th>
+              <th onclick="sortBy('created_at')">Date <span class="sort-arrow">↕</span></th>
+              <th>Photo</th>
+              <th onclick="sortBy('category')">Catégorie <span class="sort-arrow">↕</span></th>
+              <th onclick="sortBy('wilaya')">Wilaya <span class="sort-arrow">↕</span></th>
+              <th onclick="sortBy('score')">Note <span class="sort-arrow">↕</span></th>
+              <th onclick="sortBy('votes')">Votes <span class="sort-arrow">↕</span></th>
+              <th>Statut</th>
+              <th>Flags</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reports-tbody"></tbody>
+        </table>
+        <div class="pagination" id="reports-pagination"></div>
+      </div>
+    </div>
+
+    <!-- ── PHOTOS PAGE ────────────────────────────────────────────────────── -->
+    <div class="page" id="page-photos">
+      <div class="section-header">
+        <div class="section-title">Galerie photos</div>
+        <div class="section-count" id="photos-count">—</div>
+      </div>
+      <div class="gallery-grid" id="gallery-grid"></div>
+    </div>
+
+    <!-- ── FLAGGED PAGE ───────────────────────────────────────────────────── -->
+    <div class="page" id="page-flagged">
+      <div class="section-header">
+        <div class="section-title">Faux signalements · À examiner</div>
+        <div class="section-count" id="flagged-count">—</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Photo</th><th>Catégorie</th><th>Wilaya</th>
+              <th>Note</th><th>Commentaire</th><th>Date</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="flagged-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ARCHIVED PAGE ──────────────────────────────────────────────────── -->
+    <div class="page" id="page-archived">
+      <div class="section-header">
+        <div class="section-title">Archives</div>
+        <div class="section-count" id="archived-count">—</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Photo</th><th>Catégorie</th><th>Wilaya</th>
+              <th>Note</th><th>Archivé le</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="archived-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── AUDIT LOG PAGE ─────────────────────────────────────────────────── -->
+    <div class="page" id="page-audit">
+      <div class="section-header">
+        <div class="section-title">Journal d'audit</div>
+        <div class="section-count" id="audit-count">—</div>
+      </div>
+      <div class="table-wrap" style="padding: 0 20px">
+        <div id="audit-list"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- EDITOR PANEL -->
+<div id="editor-overlay">
+  <div id="editor-bg" onclick="closeEditor()"></div>
+  <div id="editor-panel">
+    <div class="ep-header">
+      <div>
+        <div class="ep-title">Modifier le signalement</div>
+        <div class="ep-id" id="ep-id">—</div>
+      </div>
+      <button class="ep-close" onclick="closeEditor()">✕</button>
+    </div>
+    <div id="ep-photo-wrap"></div>
+    <div class="ep-body">
+      <div class="ep-row">
+        <div class="ep-field">
+          <label class="ep-label">Catégorie</label>
+          <select class="ep-input" id="ep-cat">
+            <option value="pothole">🕳 Nid-de-poule</option>
+            <option value="cracks">🪨 Fissures</option>
+            <option value="lighting">🌑 Éclairage</option>
+            <option value="signage">🚧 Signalisation</option>
+            <option value="flooding">🌊 Inondation</option>
+            <option value="utility">💧 ADE / SEAAL</option>
+          </select>
+        </div>
+        <div class="ep-field">
+          <label class="ep-label">Note (1–5)</label>
+          <select class="ep-input" id="ep-score">
+            <option value="1">⭐ 1 — Impraticable</option>
+            <option value="2">⭐⭐ 2 — Très mauvais</option>
+            <option value="3">⭐⭐⭐ 3 — Acceptable</option>
+            <option value="4">⭐⭐⭐⭐ 4 — Bon état</option>
+            <option value="5">⭐⭐⭐⭐⭐ 5 — Parfait</option>
+          </select>
+        </div>
+      </div>
+      <div class="ep-row">
+        <div class="ep-field">
+          <label class="ep-label">Statut</label>
+          <select class="ep-input" id="ep-status">
+            <option value="active">🔴 Actif</option>
+            <option value="reported">🟡 Signalé aux autorités</option>
+            <option value="fixed">🟢 Réparé</option>
+            <option value="flagged">🚩 Faux signalement</option>
+          </select>
+        </div>
+        <div class="ep-field">
+          <label class="ep-label">Wilaya</label>
+          <input class="ep-input" id="ep-wilaya" type="text" maxlength="100"/>
+        </div>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Commentaire public</label>
+        <textarea class="ep-input" id="ep-comment" rows="3" maxlength="300"></textarea>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Notes admin (privé)</label>
+        <textarea class="ep-input" id="ep-notes" rows="2" maxlength="500" placeholder="Visible uniquement par les admins…"></textarea>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">Coordonnées</label>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--dim2);background:var(--s2);padding:8px 11px;border-radius:6px;border:1px solid var(--bdr)" id="ep-coords">—</div>
+      </div>
+    </div>
+    <div class="ep-footer">
+      <button class="ep-flag" id="ep-flag-btn" onclick="toggleFlag()">🚩 Signaler</button>
+      <button class="ep-save" id="ep-save-btn" onclick="saveReport()">Enregistrer</button>
+      <button class="ep-delete" onclick="deleteReport()">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" alt="Photo"/>
+  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="conf-icon">⚠️</div>
+    <div class="confirm-title" id="conf-title">Confirmer</div>
+    <div class="confirm-body" id="conf-body">Êtes-vous sûr ?</div>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" onclick="closeConfirm()">Annuler</button>
+      <button class="confirm-ok" id="conf-ok">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK BAR -->
+<div id="bulk-bar">
+  <span class="bulk-count" id="bulk-count">0 sélectionnés</span>
+  <div class="bulk-sep"></div>
+  <button class="bulk-btn safe" onclick="bulkAction('fix')">✅ Marquer réparé</button>
+  <button class="bulk-btn warning" onclick="bulkAction('flag')">🚩 Marquer faux</button>
+  <button class="bulk-btn" onclick="bulkAction('archive')">🗃️ Archiver</button>
+  <button class="bulk-btn danger" onclick="bulkAction('delete')">🗑️ Supprimer</button>
+  <button class="bulk-btn" onclick="clearSelection()">✕</button>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ⚙️  CONFIG — same project as the main app
+// ═══════════════════════════════════════════════════════════════════════════
+const SUPABASE_URL      = 'https://YOUR_PROJECT_REF.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE';
+// ═══════════════════════════════════════════════════════════════════════════
+
+const CATS = {
+  pothole:  { fr:'Nid-de-poule',  ico:'🕳',  col:'#EF4444' },
+  cracks:   { fr:'Fissures',      ico:'🪨',  col:'#F97316' },
+  lighting: { fr:'Éclairage',     ico:'🌑',  col:'#818CF8' },
+  signage:  { fr:'Signalisation', ico:'🚧',  col:'#FBBF24' },
+  flooding: { fr:'Inondation',    ico:'🌊',  col:'#38BDF8' },
+  utility:  { fr:'ADE / SEAAL',   ico:'💧',  col:'#34D399' },
+};
+const STATUS_CFG = {
+  active:   { fr:'Actif',    col:'#EF4444', dot:'🔴' },
+  reported: { fr:'Signalé',  col:'#FBBF24', dot:'🟡' },
+  fixed:    { fr:'Réparé',   col:'#3FB950', dot:'🟢' },
+  flagged:  { fr:'Faux',     col:'#818CF8', dot:'🚩' },
+};
+const AUDIT_COLORS = {
+  edit:    '#58A6FF', delete: '#F85149', archive: '#7D8590',
+  flag:    '#A371F7', restore:'#3FB950', 'unflag':'#3FB950',
+};
+const PAGE_SIZE = 25;
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let db, currentUser, adminRole;
+let allReports = [], filteredReports = [], selectedIds = new Set();
+let currentPage = 1, sortField = 'created_at', sortAsc = false;
+let editingReport = null;
+let confirmCallback = null;
+
+// ── SECURITY: esc() for any user content in innerHTML contexts ───────────────
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                  .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+function safePhotoUrl(url) {
+  if (!url) return null;
+  return /^https:\/\/[a-zA-Z0-9._-]+\.supabase\.(co|in)\//.test(url) ? url : null;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+db.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    await verifyAdmin(session.user);
+  } else {
+    showLogin();
+  }
+});
+
+async function verifyAdmin(user) {
+  try {
+    const { data, error } = await db.from('admin_users').select('role').eq('id', user.id).single();
+    if (error || !data) throw new Error('Not an admin');
+    currentUser = user;
+    adminRole = data.role;
+    showApp();
+    loadAll();
+  } catch {
+    await db.auth.signOut();
+    showLogin('Accès refusé — vous n\'êtes pas administrateur');
+  }
+}
+
+function showLogin(err = '') {
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+  if (err) document.getElementById('login-err').textContent = err;
+}
+
+function showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  const email = currentUser.email || '';
+  document.getElementById('sb-email').textContent = email;
+  document.getElementById('sb-role').textContent = adminRole;
+  document.getElementById('sb-avatar').textContent = email[0]?.toUpperCase() || 'A';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('login-btn');
+  const err   = document.getElementById('login-err');
+  err.textContent = '';
+  if (!email || !pass) { err.textContent = 'Remplissez tous les champs.'; return; }
+  btn.disabled = true; btn.textContent = 'Connexion…';
+  const { error } = await db.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'Se connecter';
+  if (error) err.textContent = error.message === 'Invalid login credentials'
+    ? 'Email ou mot de passe incorrect.' : error.message;
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+}
+
+// ── LOAD ALL DATA ─────────────────────────────────────────────────────────────
+async function loadAll() {
+  await Promise.all([loadReports(), loadStats(), loadAudit()]);
+  subscribeRealtime();
+}
+
+async function loadReports() {
+  const { data, error } = await db.from('reports')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(2000);
+  if (error) { toast('Erreur chargement: ' + error.message, 'error'); return; }
+  allReports = data || [];
+  populateWilayaFilter();
+  applyFilters();
+  renderRecentTable();
+  renderPhotos();
+  renderFlagged();
+  renderArchived();
+  updateBadges();
+}
+
+async function loadStats() {
+  const { data, error } = await db.rpc('get_admin_stats');
+  if (error || !data) return;
+  renderStats(data);
+}
+
+async function loadAudit() {
+  const { data, error } = await db.from('audit_log')
+    .select('*').order('created_at', { ascending: false }).limit(200);
+  if (error) return;
+  renderAudit(data || []);
+}
+
+function subscribeRealtime() {
+  db.channel('admin-rt')
+    .on('postgres_changes', { event:'*', schema:'public', table:'reports' }, () => {
+      loadReports(); loadStats();
+    })
+    .subscribe();
+}
+
+async function refreshAll() { await loadAll(); toast('Données actualisées', 'success'); }
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function renderStats(s) {
+  const cards = [
+    { label:'Total signalements', value: s.total,      color:'var(--txt)',    delta: `+${s.today} aujourd'hui` },
+    { label:'Actifs (non archivés)', value: s.active,  color:'var(--blue)',   delta: `${s.this_week} cette semaine` },
+    { label:'Critiques (★1)',       value: s.critical,  color:'var(--red)',    delta: 'À traiter en priorité' },
+    { label:'Réparés',              value: s.fixed,     color:'var(--green)',  delta: 'Routes corrigées' },
+    { label:'Avec photo',           value: s.with_photo,color:'var(--purple)', delta: `/ ${s.total} total` },
+    { label:'Votes citoyens',       value: s.total_votes,color:'var(--yellow)',delta: 'Confirmations' },
+    { label:'Faux signalements',    value: s.flagged,   color:'var(--red)',    delta: 'À supprimer' },
+    { label:'Note moyenne',         value: (s.avg_score||0)+'★', color:'var(--yellow)', delta: 'Sur 5 étoiles' },
+  ];
+  const grid = document.getElementById('stat-grid');
+  grid.innerHTML = cards.map(c => `
+    <div class="stat-card">
+      <div class="stat-label">${esc(c.label)}</div>
+      <div class="stat-value" style="color:${c.color}">${esc(String(c.value))}</div>
+      <div class="stat-delta">${esc(c.delta)}</div>
+    </div>
+  `).join('');
+}
+
+function updateBadges() {
+  const active = allReports.filter(r => !r.archived && r.status === 'active').length;
+  const flagged = allReports.filter(r => r.flagged).length;
+  document.getElementById('badge-active').textContent = active;
+  const fb = document.getElementById('badge-flagged');
+  if (flagged > 0) { fb.textContent = flagged; fb.style.display = ''; }
+  else fb.style.display = 'none';
+}
+
+// ── FILTERS & SORT ────────────────────────────────────────────────────────────
+function populateWilayaFilter() {
+  const wilayas = [...new Set(allReports.map(r => r.wilaya).filter(Boolean))].sort();
+  const sel = document.getElementById('f-wilaya');
+  sel.innerHTML = '<option value="">Toutes les wilayas</option>' +
+    wilayas.map(w => `<option value="${esc(w)}">${esc(w)}</option>`).join('');
+}
+
+function applyFilters() {
+  const search = document.getElementById('f-search').value.toLowerCase();
+  const wilaya = document.getElementById('f-wilaya').value;
+  const cat    = document.getElementById('f-cat').value;
+  const status = document.getElementById('f-status').value;
+  const score  = document.getElementById('f-score').value;
+
+  filteredReports = allReports.filter(r => {
+    if (r.archived) return false;
+    if (wilaya && r.wilaya !== wilaya) return false;
+    if (cat    && r.category !== cat)  return false;
+    if (status && r.status !== status) return false;
+    if (score  && r.score !== parseInt(score)) return false;
+    if (search) {
+      const hay = `${r.wilaya||''} ${r.comment||''} ${r.category||''}`.toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  filteredReports.sort((a,b) => {
+    let va = a[sortField], vb = b[sortField];
+    if (typeof va === 'string') va = va.toLowerCase(), vb = (vb||'').toLowerCase();
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  currentPage = 1;
+  renderReportsTable();
+  document.getElementById('reports-count').textContent = `${filteredReports.length} résultats`;
+}
+
+function sortBy(field) {
+  if (sortField === field) sortAsc = !sortAsc;
+  else { sortField = field; sortAsc = false; }
+  applyFilters();
+  document.querySelectorAll('th').forEach(th => th.classList.remove('sorted'));
+}
+
+function resetFilters() {
+  ['f-search','f-wilaya','f-cat','f-status','f-score'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+  });
+  applyFilters();
+}
+
+// ── TABLE RENDERS ─────────────────────────────────────────────────────────────
+function renderRecentTable() {
+  const recent = allReports.slice(0, 10);
+  document.getElementById('recent-count').textContent = `10 derniers`;
+  const tbody = document.getElementById('recent-tbody');
+  if (!recent.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-ico">📋</div><div class="empty-txt">Aucun signalement</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = recent.map(r => reportRow(r, false)).join('');
+}
+
+function renderReportsTable() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page  = filteredReports.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById('reports-tbody');
+  if (!page.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-ico">📋</div><div class="empty-txt">Aucun signalement trouvé</div></div></td></tr>`;
+  } else {
+    tbody.innerHTML = page.map(r => reportRow(r, true)).join('');
+  }
+  renderPagination();
+}
+
+function reportRow(r, withCheckbox) {
+  const c   = CATS[r.category] || CATS.pothole;
+  const st  = STATUS_CFG[r.status] || STATUS_CFG.active;
+  const sc  = scoreCol(r.score);
+  const photo = safePhotoUrl(r.photo_url);
+  const isSel = selectedIds.has(r.id);
+
+  return `<tr class="${r.archived?'archived-row':''} ${isSel?'selected':''}" data-id="${esc(r.id)}">
+    ${withCheckbox ? `<td><input type="checkbox" class="cb" ${isSel?'checked':''} onchange="toggleSelect('${esc(r.id)}',this)"/></td>` : ''}
+    <td style="font-family:var(--mono);font-size:10px;color:var(--dim)">${new Date(r.created_at).toLocaleDateString('fr-DZ')}</td>
+    <td>${photo
+      ? `<img class="thumb" src="${esc(photo)}" onclick="openLightbox('${esc(photo)}')" alt="photo" loading="lazy" onerror="this.style.display='none'"/>`
+      : `<div class="no-photo">${c.ico}</div>`
+    }</td>
+    <td><span class="cat-tag" style="color:${c.col};border-color:${c.col}40;background:${c.col}12">${c.ico} ${esc(c.fr)}</span></td>
+    <td style="font-size:12px">${esc(r.wilaya||'—')}</td>
+    <td><span class="score-chip" style="color:${sc.txt};background:${sc.bg}">${r.score}</span></td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--dim2)">${r.votes||0}</td>
+    <td><span class="status-dot"><span class="sdot" style="background:${st.col}"></span>${esc(st.fr)}</span></td>
+    <td>${r.flagged ? `<span class="flag-pill">🚩 Faux</span>` : ''}${r.archived ? `<span class="archive-pill">🗃️</span>` : ''}</td>
+    <td><div class="row-actions">
+      <button class="row-btn" onclick="openEditor('${esc(r.id)}')">✏️ Éditer</button>
+      <button class="row-btn orange" onclick="quickFlag('${esc(r.id)}')">🚩</button>
+      <button class="row-btn" onclick="quickArchive('${esc(r.id)}')">🗃️</button>
+      <button class="row-btn red" onclick="quickDelete('${esc(r.id)}')">🗑️</button>
+    </div></td>
+  </tr>`;
+}
+
+function renderPagination() {
+  const total = filteredReports.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const el = document.getElementById('reports-pagination');
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  const start = (currentPage-1)*PAGE_SIZE+1;
+  const end   = Math.min(currentPage*PAGE_SIZE, total);
+  el.innerHTML = `
+    <span>${start}–${end} sur ${total}</span>
+    <div class="pg-btns">
+      <button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>←</button>
+      ${Array.from({length:Math.min(pages,7)},(_,i)=>{
+        const p = i+1;
+        return `<button class="pg-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+      }).join('')}
+      <button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>→</button>
+    </div>
+  `;
+}
+function goPage(p) {
+  const pages = Math.ceil(filteredReports.length / PAGE_SIZE);
+  if (p < 1 || p > pages) return;
+  currentPage = p;
+  renderReportsTable();
+}
+
+// ── PHOTOS GALLERY ────────────────────────────────────────────────────────────
+function renderPhotos() {
+  const withPhotos = allReports.filter(r => safePhotoUrl(r.photo_url) && !r.archived);
+  document.getElementById('photos-count').textContent = `${withPhotos.length} photos`;
+  const grid = document.getElementById('gallery-grid');
+  if (!withPhotos.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-ico">📷</div><div class="empty-txt">Aucune photo uploadée</div></div>`;
+    return;
+  }
+  grid.innerHTML = withPhotos.map(r => {
+    const c = CATS[r.category] || CATS.pothole;
+    const url = safePhotoUrl(r.photo_url);
+    return `<div class="gallery-card ${r.flagged?'flagged-card':''}" onclick="openEditor('${esc(r.id)}')">
+      <img class="gallery-img" src="${esc(url)}" alt="photo"
+           onerror="this.parentElement.style.display='none'"
+           loading="lazy"
+           onclick="event.stopPropagation();openLightbox('${esc(url)}')"/>
+      ${r.flagged ? '<button class="gallery-flag">🚩 Faux</button>' : ''}
+      <div class="gallery-info">
+        <div class="gallery-cat" style="color:${c.col}">${c.ico} ${esc(c.fr)}</div>
+        <div class="gallery-meta">${esc(r.wilaya||'—')} · ${'⭐'.repeat(r.score)}</div>
+        <div class="gallery-meta">${new Date(r.created_at).toLocaleDateString('fr-DZ')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── FLAGGED ───────────────────────────────────────────────────────────────────
+function renderFlagged() {
+  const flagged = allReports.filter(r => r.flagged && !r.archived);
+  document.getElementById('flagged-count').textContent = `${flagged.length} signalés`;
+  const tbody = document.getElementById('flagged-tbody');
+  if (!flagged.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-ico">✅</div><div class="empty-txt">Aucun faux signalement — tout est propre</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = flagged.map(r => {
+    const c = CATS[r.category]||CATS.pothole;
+    const photo = safePhotoUrl(r.photo_url);
+    return `<tr>
+      <td>${photo?`<img class="thumb" src="${esc(photo)}" onclick="openLightbox('${esc(photo)}')" alt="photo" loading="lazy"/>`:`<div class="no-photo">${c.ico}</div>`}</td>
+      <td><span class="cat-tag" style="color:${c.col};border-color:${c.col}40;background:${c.col}12">${c.ico} ${esc(c.fr)}</span></td>
+      <td>${esc(r.wilaya||'—')}</td>
+      <td>${'⭐'.repeat(r.score)}</td>
+      <td style="max-width:200px;font-size:12px;color:var(--dim2);word-break:break-word">${esc(r.comment||'—')}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--dim)">${new Date(r.created_at).toLocaleDateString('fr-DZ')}</td>
+      <td><div class="row-actions" style="opacity:1">
+        <button class="row-btn" onclick="quickUnflag('${esc(r.id)}')">✅ Valider</button>
+        <button class="row-btn" onclick="quickArchive('${esc(r.id)}')">🗃️ Archiver</button>
+        <button class="row-btn red" onclick="quickDelete('${esc(r.id)}')">🗑️ Supprimer</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── ARCHIVED ──────────────────────────────────────────────────────────────────
+function renderArchived() {
+  const archived = allReports.filter(r => r.archived);
+  document.getElementById('archived-count').textContent = `${archived.length} archivés`;
+  const tbody = document.getElementById('archived-tbody');
+  if (!archived.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-ico">🗃️</div><div class="empty-txt">Aucun signalement archivé</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = archived.map(r => {
+    const c = CATS[r.category]||CATS.pothole;
+    const photo = safePhotoUrl(r.photo_url);
+    return `<tr class="archived-row">
+      <td>${photo?`<img class="thumb" src="${esc(photo)}" onclick="openLightbox('${esc(photo)}')" alt="photo" loading="lazy"/>`:`<div class="no-photo">${c.ico}</div>`}</td>
+      <td><span class="cat-tag" style="color:${c.col};border-color:${c.col}40;background:${c.col}12">${c.ico} ${esc(c.fr)}</span></td>
+      <td>${esc(r.wilaya||'—')}</td>
+      <td>${'⭐'.repeat(r.score)}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--dim)">${new Date(r.updated_at||r.created_at).toLocaleDateString('fr-DZ')}</td>
+      <td><div class="row-actions" style="opacity:1">
+        <button class="row-btn" onclick="quickRestore('${esc(r.id)}')">↩ Restaurer</button>
+        <button class="row-btn red" onclick="quickDelete('${esc(r.id)}')">🗑️ Supprimer</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── AUDIT LOG ─────────────────────────────────────────────────────────────────
+function renderAudit(logs) {
+  document.getElementById('audit-count').textContent = `${logs.length} actions`;
+  const list = document.getElementById('audit-list');
+  if (!logs.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-ico">📜</div><div class="empty-txt">Aucune action enregistrée</div></div>`;
+    return;
+  }
+  list.innerHTML = logs.map(l => {
+    const col = AUDIT_COLORS[l.action] || 'var(--dim)';
+    return `<div class="audit-row">
+      <div class="audit-action">
+        <span class="audit-badge" style="background:${col}22;color:${col};border:1px solid ${col}44">${esc(l.action)}</span>
+      </div>
+      <div class="audit-detail">
+        <div class="audit-text">${esc(l.admin_email||'admin')}</div>
+        <div class="audit-sub">${esc(l.report_id||'—')}${l.payload?` · ${JSON.stringify(l.payload).slice(0,80)}`:''}...</div>
+      </div>
+      <div class="audit-time">${new Date(l.created_at).toLocaleString('fr-DZ')}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── EDITOR ────────────────────────────────────────────────────────────────────
+function openEditor(id) {
+  const r = allReports.find(x => x.id === id);
+  if (!r) return;
+  editingReport = { ...r };
+
+  document.getElementById('ep-id').textContent = r.id;
+  document.getElementById('ep-cat').value     = r.category || 'pothole';
+  document.getElementById('ep-score').value   = r.score || 3;
+  document.getElementById('ep-status').value  = r.status || 'active';
+  document.getElementById('ep-wilaya').value  = r.wilaya || '';
+  document.getElementById('ep-comment').value = r.comment || '';
+  document.getElementById('ep-notes').value   = r.admin_notes || '';
+  document.getElementById('ep-coords').textContent = `${(r.lat||0).toFixed(5)}, ${(r.lng||0).toFixed(5)}`;
+
+  const flagBtn = document.getElementById('ep-flag-btn');
+  flagBtn.classList.toggle('flagged', !!r.flagged);
+  flagBtn.textContent = r.flagged ? '✅ Valider' : '🚩 Signaler faux';
+
+  const photoWrap = document.getElementById('ep-photo-wrap');
+  const photo = safePhotoUrl(r.photo_url);
+  if (photo) {
+    photoWrap.innerHTML = `<img class="ep-photo" src="${esc(photo)}" alt="photo" onclick="openLightbox('${esc(photo)}')" onerror="this.style.display='none'"/>`;
+  } else {
+    photoWrap.innerHTML = `<div class="ep-photo-none">📷</div>`;
+  }
+
+  document.getElementById('editor-overlay').classList.add('open');
+}
+
+function closeEditor() {
+  document.getElementById('editor-overlay').classList.remove('open');
+  editingReport = null;
+}
+
+async function saveReport() {
+  if (!editingReport) return;
+  const btn = document.getElementById('ep-save-btn');
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+
+  const updates = {
+    category:    document.getElementById('ep-cat').value,
+    score:       parseInt(document.getElementById('ep-score').value),
+    status:      document.getElementById('ep-status').value,
+    wilaya:      document.getElementById('ep-wilaya').value.trim().slice(0,100) || null,
+    comment:     document.getElementById('ep-comment').value.trim().slice(0,300) || null,
+    admin_notes: document.getElementById('ep-notes').value.trim().slice(0,500) || null,
+    reviewed_at: new Date().toISOString(),
+    reviewed_by: currentUser.id,
+  };
+
+  const { error } = await db.from('reports').update(updates).eq('id', editingReport.id);
+  btn.disabled = false; btn.textContent = 'Enregistrer';
+
+  if (error) { toast('Erreur: ' + error.message, 'error'); return; }
+  await db.rpc('log_admin_action', { p_action:'edit', p_report_id: editingReport.id, p_payload: updates });
+
+  const idx = allReports.findIndex(r => r.id === editingReport.id);
+  if (idx > -1) allReports[idx] = { ...allReports[idx], ...updates };
+  applyFilters(); renderRecentTable(); renderPhotos();
+  toast('Signalement mis à jour', 'success');
+  closeEditor();
+}
+
+async function toggleFlag() {
+  if (!editingReport) return;
+  const newFlagged = !editingReport.flagged;
+  const { error } = await db.from('reports').update({ flagged: newFlagged }).eq('id', editingReport.id);
+  if (error) { toast('Erreur: ' + error.message, 'error'); return; }
+  await db.rpc('log_admin_action', { p_action: newFlagged ? 'flag' : 'unflag', p_report_id: editingReport.id });
+  editingReport.flagged = newFlagged;
+  const btn = document.getElementById('ep-flag-btn');
+  btn.classList.toggle('flagged', newFlagged);
+  btn.textContent = newFlagged ? '✅ Valider' : '🚩 Signaler faux';
+  const idx = allReports.findIndex(r => r.id === editingReport.id);
+  if (idx > -1) allReports[idx].flagged = newFlagged;
+  renderFlagged(); updateBadges();
+  toast(newFlagged ? 'Marqué comme faux signalement' : 'Signalement validé', 'info');
+}
+
+async function deleteReport() {
+  if (!editingReport) return;
+  confirm_({
+    icon:'🗑️', title:'Supprimer ce signalement ?',
+    body:'Cette action est irréversible. Le signalement et sa photo seront supprimés définitivement.',
+    ok:'Supprimer',
+    async onOk() {
+      const id = editingReport.id;
+      const photoUrl = safePhotoUrl(editingReport.photo_url);
+      closeEditor();
+      if (photoUrl) {
+        const path = photoUrl.split('/road-photos/').pop();
+        if (path) await db.storage.from('road-photos').remove([path]);
+      }
+      const { error } = await db.from('reports').delete().eq('id', id);
+      if (error) { toast('Erreur: ' + error.message, 'error'); return; }
+      await db.rpc('log_admin_action', { p_action:'delete', p_report_id: id });
+      allReports = allReports.filter(r => r.id !== id);
+      applyFilters(); renderRecentTable(); renderPhotos(); renderFlagged(); renderArchived(); updateBadges();
+      toast('Signalement supprimé', 'success');
+    }
+  });
+}
+
+// ── QUICK ROW ACTIONS ─────────────────────────────────────────────────────────
+async function quickAction(id, updates, action) {
+  const { error } = await db.from('reports').update(updates).eq('id', id);
+  if (error) { toast('Erreur: ' + error.message, 'error'); return false; }
+  await db.rpc('log_admin_action', { p_action: action, p_report_id: id, p_payload: updates });
+  const idx = allReports.findIndex(r => r.id === id);
+  if (idx > -1) allReports[idx] = { ...allReports[idx], ...updates };
+  applyFilters(); renderRecentTable(); renderPhotos(); renderFlagged(); renderArchived(); updateBadges();
+  return true;
+}
+
+function quickFlag(id)    { quickAction(id, { flagged:true, status:'flagged' }, 'flag').then(ok => ok && toast('Marqué comme faux signalement','info')); }
+function quickUnflag(id)  { quickAction(id, { flagged:false, status:'active'  }, 'unflag').then(ok => ok && toast('Signalement validé','success')); }
+function quickArchive(id) { quickAction(id, { archived:true }, 'archive').then(ok => ok && toast('Archivé','success')); }
+function quickRestore(id) { quickAction(id, { archived:false }, 'restore').then(ok => ok && toast('Restauré','success')); }
+
+function quickDelete(id) {
+  const r = allReports.find(x => x.id === id);
+  confirm_({
+    icon:'🗑️', title:'Supprimer ?',
+    body:'Cette action est irréversible.',
+    ok:'Supprimer',
+    async onOk() {
+      const photoUrl = safePhotoUrl(r?.photo_url);
+      if (photoUrl) {
+        const path = photoUrl.split('/road-photos/').pop();
+        if (path) await db.storage.from('road-photos').remove([path]);
+      }
+      const { error } = await db.from('reports').delete().eq('id', id);
+      if (error) { toast('Erreur: '+error.message,'error'); return; }
+      await db.rpc('log_admin_action', { p_action:'delete', p_report_id: id });
+      allReports = allReports.filter(r => r.id !== id);
+      applyFilters(); renderRecentTable(); renderPhotos(); renderFlagged(); renderArchived(); updateBadges();
+      toast('Supprimé', 'success');
+    }
+  });
+}
+
+// ── BULK SELECTION ────────────────────────────────────────────────────────────
+function toggleSelect(id, cb) {
+  if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+  const tr = cb.closest('tr');
+  if (tr) tr.classList.toggle('selected', cb.checked);
+  updateBulkBar();
+}
+function toggleSelectAll(masterCb) {
+  const start = (currentPage-1)*PAGE_SIZE;
+  const page  = filteredReports.slice(start, start+PAGE_SIZE);
+  page.forEach(r => {
+    if (masterCb.checked) selectedIds.add(r.id); else selectedIds.delete(r.id);
+  });
+  renderReportsTable(); updateBulkBar();
+}
+function clearSelection() {
+  selectedIds.clear();
+  renderReportsTable();
+  document.getElementById('select-all').checked = false;
+  updateBulkBar();
+}
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  const n = selectedIds.size;
+  document.getElementById('bulk-count').textContent = `${n} sélectionné${n>1?'s':''}`;
+  bar.classList.toggle('show', n > 0);
+}
+
+async function bulkAction(action) {
+  if (!selectedIds.size) return;
+  const ids = [...selectedIds];
+  const label = {
+    fix:'marqués comme réparés', flag:'marqués comme faux',
+    archive:'archivés', delete:'supprimés',
+  }[action];
+  confirm_({
+    icon: action==='delete'?'🗑️':'⚠️',
+    title:`${action==='delete'?'Supprimer':'Modifier'} ${ids.length} signalement${ids.length>1?'s':''}?`,
+    body:`Ces signalements seront ${label}.${action==='delete'?' Cette action est irréversible.':''}`,
+    ok: action==='delete'?'Supprimer':action==='archive'?'Archiver':'Confirmer',
+    async onOk() {
+      const updates = { fix:{status:'fixed'}, flag:{flagged:true,status:'flagged'}, archive:{archived:true} }[action];
+      for (const id of ids) {
+        if (action === 'delete') {
+          const r = allReports.find(x => x.id === id);
+          const photoUrl = safePhotoUrl(r?.photo_url);
+          if (photoUrl) {
+            const path = photoUrl.split('/road-photos/').pop();
+            if (path) await db.storage.from('road-photos').remove([path]);
+          }
+          await db.from('reports').delete().eq('id', id);
+          await db.rpc('log_admin_action', { p_action:'delete', p_report_id:id });
+        } else {
+          await db.from('reports').update(updates).eq('id', id);
+          await db.rpc('log_admin_action', { p_action:action, p_report_id:id, p_payload:updates });
+        }
+      }
+      if (action === 'delete') allReports = allReports.filter(r => !ids.includes(r.id));
+      else allReports = allReports.map(r => ids.includes(r.id) ? {...r,...updates} : r);
+      clearSelection();
+      applyFilters(); renderRecentTable(); renderPhotos(); renderFlagged(); renderArchived(); updateBadges();
+      toast(`${ids.length} signalement${ids.length>1?'s':''} ${label}`, 'success');
+    }
+  });
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const rows = [['ID','Date','Catégorie','Wilaya','Note','Statut','Votes','Flaggé','Archivé','Commentaire','Photo URL','Lat','Lng']];
+  allReports.forEach(r => {
+    rows.push([
+      r.id, new Date(r.created_at).toISOString(), r.category, r.wilaya||'',
+      r.score, r.status, r.votes||0,
+      r.flagged?'Oui':'Non', r.archived?'Oui':'Non',
+      (r.comment||'').replace(/,/g,' '), r.photo_url||'',
+      r.lat, r.lng,
+    ]);
+  });
+  const csv = rows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `hafra-admin-${new Date().toISOString().slice(0,10)}.csv`;
+  a.style.display = 'none';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  toast('CSV exporté', 'success');
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+const PAGE_TITLES = {
+  dashboard:{ title:'Dashboard', sub:'Vue d\'ensemble' },
+  reports:  { title:'Signalements', sub:'Tous les rapports citoyens' },
+  photos:   { title:'Galerie photos', sub:'Images téléversées' },
+  flagged:  { title:'Faux signalements', sub:'À examiner et traiter' },
+  archived: { title:'Archives', sub:'Signalements archivés' },
+  audit:    { title:'Journal d\'audit', sub:'Toutes les actions admin' },
+};
+function showPage(name, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  navEl.classList.add('active');
+  const cfg = PAGE_TITLES[name] || {};
+  document.getElementById('topbar-title').textContent = cfg.title || name;
+  document.getElementById('topbar-sub').textContent   = cfg.sub   || '';
+}
+
+// ── LIGHTBOX ──────────────────────────────────────────────────────────────────
+function openLightbox(url) {
+  const safe = safePhotoUrl(url);
+  if (!safe) return;
+  document.getElementById('lightbox-img').src = safe;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLightbox(); closeEditor(); closeConfirm(); } });
+
+// ── CONFIRM DIALOG ────────────────────────────────────────────────────────────
+function confirm_({ icon, title, body, ok, onOk }) {
+  document.getElementById('conf-icon').textContent  = icon;
+  document.getElementById('conf-title').textContent = title;
+  document.getElementById('conf-body').textContent  = body;
+  document.getElementById('conf-ok').textContent    = ok;
+  document.getElementById('conf-ok').onclick = async () => { closeConfirm(); await onOk(); };
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); }
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;           // textContent — XSS safe
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 3500);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function scoreCol(s) {
+  const map = {1:{txt:'#EF4444',bg:'#EF444420'},2:{txt:'#F97316',bg:'#F9731620'},
+               3:{txt:'#FBBF24',bg:'#FBBF2420'},4:{txt:'#84CC16',bg:'#84CC1620'},5:{txt:'#22C55E',bg:'#22C55E20'}};
+  return map[s] || map[3];
+}
+</script>
+</body>
+</html>

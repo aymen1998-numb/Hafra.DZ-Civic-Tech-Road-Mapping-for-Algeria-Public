@@ -1,0 +1,36 @@
+{
+  "name": "حفرة — Hafra.DZ",
+  "short_name": "حفرة",
+  "description": "Signalez les mauvaises routes en Algérie",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#090C12",
+  "theme_color": "#FF5722",
+  "orientation": "portrait-primary",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["utilities", "navigation"],
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ajouter un signalement",
+      "short_name": "Signaler",
+      "url": "/?action=report",
+      "icons": [{ "src": "logo.png", "sizes": "96x96" }]
+    }
+  ]
+}

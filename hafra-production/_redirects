@@ -1,0 +1,5 @@
+# Redirect www to apex domain
+https://www.hafra.dz/* https://hafra.dz/:splat 301!
+
+# SPA fallback — all routes serve index.html
+/*  /index.html  200
